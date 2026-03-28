@@ -143,7 +143,7 @@ function SlideProblem() {
   const stats = [
     { value: "6–8h+", label: "ED wait times\nin Victoria", color: "#CE3E39" },
     { value: "700K", label: "British Columbians\nwithout a family doctor", color: "#F59E0B" },
-    { value: "62%", label: "Of ER visits are for\nnon-emergency issues", color: "#3B82F6" },
+    { value: "31%", label: "Of BC ER visits triaged\nas lower urgency", color: "#3B82F6" },
   ];
 
   const quotes = [
