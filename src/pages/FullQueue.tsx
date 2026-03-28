@@ -58,9 +58,9 @@ const avatarColors = ["bg-[#013366]", "bg-[#255A90]", "bg-[#1E5189]", "bg-[#4745
 const getInitials = (f: string, l: string) => `${f[0]}${l[0]}`;
 
 const journeyStatuses: JourneyStatus[] = [
-  "In examination", "Waiting for blood work", "Awaiting lab results",
-  "Waiting for imaging", "With specialist", "Ready for discharge",
-  "Awaiting medication", "In triage",
+  "In Progress", "Waiting", "Awaiting Lab Results",
+  "With Specialist", "Ready for Discharge",
+  "Awaiting Medication", "In Triage",
 ];
 
 const ALL_JOURNEY_STATUSES: JourneyStatus[] = [

@@ -398,7 +398,7 @@ export default function PatientWaiting() {
     ready: { label: "Ready for you!", color: "text-[#166534]", dot: "bg-[#22C55E] animate-pulse" },
     "in-progress": { label: "In progress", color: "text-[#013366]", dot: "bg-[#013366]" },
   };
-  const status = statusConfig[patient.journeyStatus];
+  const status = statusConfig["waiting"];
 
   return (
     <div className="min-h-screen bg-[#F2F4F7]">
