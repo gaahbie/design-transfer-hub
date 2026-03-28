@@ -743,11 +743,11 @@ function Sidebar({
         <div className="flex items-end justify-between gap-2 mb-4">
           <div>
             <p className="text-4xl font-bold text-white tabular-nums leading-none">
-              42<span className="text-base font-semibold text-white/50 ml-1">min</span>
+              {allAvgWait}<span className="text-base font-semibold text-white/50 ml-1">min</span>
             </p>
             <div className="flex items-center gap-1 mt-1.5">
               <TrendingDown className="w-3.5 h-3.5 text-[#34D399]" />
-              <span className="text-xs font-semibold text-[#34D399]">−12% vs last week</span>
+              <span className="text-xs font-semibold text-[#34D399]">Within target</span>
             </div>
           </div>
           <svg viewBox="0 0 60 26" className="w-16 h-7 flex-shrink-0 opacity-80">
