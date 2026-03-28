@@ -37,7 +37,7 @@ export default function EncounterDetail() {
     return <div className="p-6 text-muted-foreground">Encounter not found</div>;
   }
 
-  const { encounter, patient, vitals, labs, medications } = data;
+  const { encounter, patient, vitals, labs, medications, allergies } = data;
 
   // Calculate clinical alerts
   const abnormalLabs = labs.filter((lab) => lab.abnormal_flag);
@@ -124,6 +124,43 @@ export default function EncounterDetail() {
           <Badge className={triageBadge}>CTAS {encounter.triage_level}</Badge>
         </div>
       </div>
+
+      {/* ── Allergy Banner ── */}
+      {allergies.length > 0 && (
+        <div className="bg-[var(--status-critical-bg)] border-b-2 border-[var(--status-critical)]">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <AlertTriangle className="w-5 h-5 text-[var(--status-critical)]" />
+              <span className="text-sm font-bold text-[var(--status-critical)] uppercase tracking-wide">Allergies</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {allergies.map((a) => (
+                <Badge
+                  key={a.allergy_id}
+                  variant="outline"
+                  className={
+                    a.severity === 'severe'
+                      ? 'bg-[var(--status-critical)] text-white border-[var(--status-critical)]'
+                      : a.severity === 'moderate'
+                      ? 'bg-[var(--status-warning-bg)] text-[var(--status-warning)] border-[var(--status-warning-border)]'
+                      : 'bg-muted text-foreground border-border'
+                  }
+                >
+                  {a.allergen} — {a.reaction}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {allergies.length === 0 && (
+        <div className="bg-[var(--status-success-bg)] border-b border-[var(--status-success-border)]">
+          <div className="max-w-7xl mx-auto px-6 py-2 flex items-center gap-2">
+            <Shield className="w-4 h-4 text-[var(--status-success)]" />
+            <span className="text-sm font-medium text-[var(--status-success)]">No Known Allergies (NKA)</span>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

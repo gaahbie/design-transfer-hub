@@ -81,6 +81,14 @@ export interface Medication {
   active: boolean;
 }
 
+export interface Allergy {
+  allergy_id: string;
+  patient_id: string;
+  allergen: string;
+  reaction: string;
+  severity: 'mild' | 'moderate' | 'severe';
+}
+
 // Map chief complaint → service line
 function mapServiceLine(complaint: string): ServiceLine {
   const c = complaint.toLowerCase();
@@ -262,6 +270,22 @@ export const medications: Medication[] = [
   { medication_id: 'MED-003753', patient_id: 'PAT-000008', drug_name: 'pantoprazole', drug_code: '02828816', dosage: '20mg', frequency: 'once daily', route: 'oral', prescriber: 'Dr. Christopher Moore', start_date: '2025-08-08', end_date: '2025-11-11', active: false },
 ];
 
+export const allergies: Allergy[] = [
+  { allergy_id: 'ALG-001', patient_id: 'PAT-001747', allergen: 'Penicillin', reaction: 'Anaphylaxis', severity: 'severe' },
+  { allergy_id: 'ALG-002', patient_id: 'PAT-001645', allergen: 'Sulfonamides', reaction: 'Rash', severity: 'moderate' },
+  { allergy_id: 'ALG-003', patient_id: 'PAT-001668', allergen: 'Latex', reaction: 'Contact dermatitis', severity: 'moderate' },
+  { allergy_id: 'ALG-004', patient_id: 'PAT-000776', allergen: 'Penicillin', reaction: 'Hives', severity: 'moderate' },
+  { allergy_id: 'ALG-005', patient_id: 'PAT-000776', allergen: 'Ibuprofen', reaction: 'GI bleeding', severity: 'severe' },
+  { allergy_id: 'ALG-006', patient_id: 'PAT-001421', allergen: 'Codeine', reaction: 'Nausea / vomiting', severity: 'mild' },
+  { allergy_id: 'ALG-007', patient_id: 'PAT-001116', allergen: 'ASA (Aspirin)', reaction: 'Bronchospasm', severity: 'severe' },
+  { allergy_id: 'ALG-008', patient_id: 'PAT-001894', allergen: 'Egg', reaction: 'Anaphylaxis', severity: 'severe' },
+  { allergy_id: 'ALG-009', patient_id: 'PAT-000144', allergen: 'Morphine', reaction: 'Respiratory depression', severity: 'severe' },
+  { allergy_id: 'ALG-010', patient_id: 'PAT-000144', allergen: 'Shellfish', reaction: 'Urticaria', severity: 'moderate' },
+  { allergy_id: 'ALG-011', patient_id: 'PAT-001124', allergen: 'Penicillin', reaction: 'Anaphylaxis', severity: 'severe' },
+  { allergy_id: 'ALG-012', patient_id: 'PAT-001124', allergen: 'Sulfonamides', reaction: 'Stevens-Johnson syndrome', severity: 'severe' },
+  { allergy_id: 'ALG-013', patient_id: 'PAT-000008', allergen: 'Contrast dye', reaction: 'Anaphylactoid reaction', severity: 'severe' },
+];
+
 // ─────────────────────────────────────────────
 // HELPER FUNCTIONS
 // ─────────────────────────────────────────────
@@ -272,6 +296,7 @@ export function getAllEncountersWithPatients() {
     const encVitals = vitals.find((v) => v.encounter_id === enc.encounter_id) ?? null;
     const encLabs = labResults.filter((l) => l.encounter_id === enc.encounter_id);
     const encMeds = medications.filter((m) => m.patient_id === enc.patient_id);
+    const encAllergies = allergies.filter((a) => a.patient_id === enc.patient_id);
 
     const minutesSinceArrival = Math.max(0, (now.getTime() - new Date(enc.encounter_date).getTime()) / 60000);
     const serviceLine = mapServiceLine(enc.chief_complaint);
@@ -284,6 +309,7 @@ export function getAllEncountersWithPatients() {
       vitals: encVitals,
       labs: encLabs,
       medications: encMeds,
+      allergies: encAllergies,
       serviceLine,
       journeyStatus,
       estimatedWaitMinutes,
@@ -298,5 +324,6 @@ export function getEncounterWithPatient(encounterId: string) {
   const encVitals = vitals.find((v) => v.encounter_id === encounterId) ?? null;
   const encLabs = labResults.filter((l) => l.encounter_id === encounterId);
   const encMeds = medications.filter((m) => m.patient_id === encounter.patient_id);
-  return { encounter, patient, vitals: encVitals, labs: encLabs, medications: encMeds };
+  const encAllergies = allergies.filter((a) => a.patient_id === encounter.patient_id);
+  return { encounter, patient, vitals: encVitals, labs: encLabs, medications: encMeds, allergies: encAllergies };
 }
