@@ -81,36 +81,48 @@ export interface Medication {
   active: boolean;
 }
 
-export const encounterServiceData: Record<
-  string,
-  { serviceLine: ServiceLine; journeyStatus: JourneyStatus; estimatedWaitMinutes: number }
-> = {
-  'ENC-0005422': { serviceLine: 'doctor', journeyStatus: 'With Specialist', estimatedWaitMinutes: 25 },
-  'ENC-0008293': { serviceLine: 'imaging', journeyStatus: 'In Progress', estimatedWaitMinutes: 0 },
-  'ENC-0007580': { serviceLine: 'imaging', journeyStatus: 'Waiting', estimatedWaitMinutes: 47 },
-  'ENC-0002871': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 21 },
-  'ENC-0006073': { serviceLine: 'imaging', journeyStatus: 'Waiting', estimatedWaitMinutes: 38 },
-  'ENC-0009552': { serviceLine: 'doctor', journeyStatus: 'Waiting', estimatedWaitMinutes: 30 },
-  'ENC-0003916': { serviceLine: 'doctor', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 23 },
-  'ENC-0008866': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 32 },
-  'ENC-0000388': { serviceLine: 'imaging', journeyStatus: 'Waiting', estimatedWaitMinutes: 83 },
-  'ENC-0009852': { serviceLine: 'blood-work', journeyStatus: 'With Specialist', estimatedWaitMinutes: 2 },
-  'ENC-0004841': { serviceLine: 'doctor', journeyStatus: 'In Triage', estimatedWaitMinutes: 71 },
-  'ENC-0003829': { serviceLine: 'doctor', journeyStatus: 'Waiting', estimatedWaitMinutes: 72 },
-  'ENC-0007129': { serviceLine: 'doctor', journeyStatus: 'Ready for Discharge', estimatedWaitMinutes: 8 },
-  'ENC-0007123': { serviceLine: 'imaging', journeyStatus: 'Awaiting Medication', estimatedWaitMinutes: 12 },
-  'ENC-0009573': { serviceLine: 'blood-work', journeyStatus: 'With Specialist', estimatedWaitMinutes: 9 },
-  'ENC-0001215': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 23 },
-  'ENC-0003370': { serviceLine: 'pharmacy', journeyStatus: 'Waiting', estimatedWaitMinutes: 84 },
-  'ENC-0000810': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 39 },
-  'ENC-0004599': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 40 },
-  'ENC-0003497': { serviceLine: 'blood-work', journeyStatus: 'Awaiting Medication', estimatedWaitMinutes: 17 },
-  'ENC-0001530': { serviceLine: 'imaging', journeyStatus: 'Ready for Discharge', estimatedWaitMinutes: 13 },
-  'ENC-0008995': { serviceLine: 'blood-work', journeyStatus: 'With Specialist', estimatedWaitMinutes: 13 },
-  'ENC-0006552': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 29 },
-  'ENC-0009243': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 24 },
-  'ENC-0006312': { serviceLine: 'imaging', journeyStatus: 'In Triage', estimatedWaitMinutes: 76 },
-};
+// Map chief complaint → service line
+function mapServiceLine(complaint: string): ServiceLine {
+  const c = complaint.toLowerCase();
+  if (c.includes('chest pain') || c.includes('shortness of breath') || c.includes('abdominal pain') || c.includes('headache') || c.includes('dizziness') || c.includes('anxiety') || c.includes('fever')) return 'doctor';
+  if (c.includes('injury') || c.includes('back pain') || c.includes('fracture')) return 'imaging';
+  if (c.includes('rash') || c.includes('skin') || c.includes('nausea') || c.includes('vomiting')) return 'blood-work';
+  if (c.includes('cough') || c.includes('cold')) return 'pharmacy';
+  return 'doctor';
+}
+
+// Map triage + elapsed time → journey status
+function mapJourneyStatus(triage: number, minutesSinceArrival: number): JourneyStatus {
+  if (minutesSinceArrival < 8) return 'In Triage';
+  if (triage <= 2) {
+    if (minutesSinceArrival < 20) return 'Waiting';
+    if (minutesSinceArrival < 60) return 'In Progress';
+    if (minutesSinceArrival < 120) return 'Awaiting Lab Results';
+    return 'Ready for Discharge';
+  }
+  if (triage === 3) {
+    if (minutesSinceArrival < 35) return 'Waiting';
+    if (minutesSinceArrival < 90) return 'In Progress';
+    if (minutesSinceArrival < 150) return 'With Specialist';
+    return 'Ready for Discharge';
+  }
+  // triage 4-5
+  if (minutesSinceArrival < 60) return 'Waiting';
+  if (minutesSinceArrival < 120) return 'Awaiting Medication';
+  if (minutesSinceArrival < 180) return 'In Progress';
+  return 'Ready for Discharge';
+}
+
+// Compute estimated remaining wait based on CTAS targets
+function computeEstimatedWait(triage: number, minutesSinceArrival: number, status: JourneyStatus): number {
+  if (status === 'In Progress' || status === 'Ready for Discharge') return 0;
+  const targets: Record<number, number> = { 1: 5, 2: 15, 3: 30, 4: 60, 5: 120 };
+  const target = targets[triage] ?? 30;
+  // Estimated remaining = target total visit time minus elapsed, with some variance
+  const totalExpected = target + 45 + (triage * 15); // target wait + treatment time
+  const remaining = Math.max(0, totalExpected - minutesSinceArrival);
+  return remaining;
+}
 
 export const patients: Patient[] = [
   { patient_id: 'PAT-001747', first_name: 'Joanne', last_name: 'Stephenson', date_of_birth: '1992-11-15', age: 33, sex: 'F', postal_code: 'V8S 1Y6', blood_type: 'A+', insurance_number: '2112 181 851', primary_language: 'Other', emergency_contact_phone: '531-637-0500' },
@@ -134,32 +146,39 @@ export const patients: Patient[] = [
   { patient_id: 'PAT-000008', first_name: 'Danielle', last_name: 'Hoffman', date_of_birth: '1987-12-01', age: 38, sex: 'F', postal_code: 'V9B 7R5', blood_type: 'B+', insurance_number: '3285 389 354', primary_language: 'Mandarin', emergency_contact_phone: '1-296-965-3287' },
 ];
 
+// Generate today-based arrival times staggered over the last ~4 hours
+function todayAt(hoursAgo: number): string {
+  const now = new Date();
+  const d = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000);
+  return d.toISOString();
+}
+
 export const encounters: Encounter[] = [
-  { encounter_id: 'ENC-0005422', patient_id: 'PAT-001997', encounter_date: '2025-09-04T08:30:00', encounter_type: 'emergency', facility: 'Victoria General Hospital', chief_complaint: 'headache', diagnosis_code: 'I10', diagnosis_description: 'Essential hypertension', triage_level: 2, disposition: 'admitted', length_of_stay_hours: 24.0, attending_physician: 'Dr. Brenda Johnson' },
-  { encounter_id: 'ENC-0008293', patient_id: 'PAT-001894', encounter_date: '2025-07-15T08:30:00', encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'dizziness', diagnosis_code: 'E11.9', diagnosis_description: 'Type 2 diabetes mellitus', triage_level: 2, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Rhonda Taylor' },
-  { encounter_id: 'ENC-0007580', patient_id: 'PAT-000008', encounter_date: '2023-05-03T08:30:00', encounter_type: 'outpatient', facility: 'Royal Jubilee Hospital', chief_complaint: 'chest pain', diagnosis_code: 'R07.9', diagnosis_description: 'Chest pain, unspecified', triage_level: 4, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Gregory Wilson' },
-  { encounter_id: 'ENC-0002871', patient_id: 'PAT-001191', encounter_date: '2024-08-29T08:30:00', encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'abdominal pain', diagnosis_code: 'K35.9', diagnosis_description: 'Acute appendicitis', triage_level: 1, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Christine Morgan' },
-  { encounter_id: 'ENC-0006073', patient_id: 'PAT-001918', encounter_date: '2023-10-01T08:30:00', encounter_type: 'inpatient', facility: 'Royal Jubilee Hospital', chief_complaint: 'back pain', diagnosis_code: 'M54.5', diagnosis_description: 'Low back pain', triage_level: 3, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Lisa Fox' },
-  { encounter_id: 'ENC-0009552', patient_id: 'PAT-001233', encounter_date: '2023-11-07T08:30:00', encounter_type: 'outpatient', facility: 'Royal Jubilee Hospital', chief_complaint: 'headache', diagnosis_code: 'I10', diagnosis_description: 'Essential hypertension', triage_level: 3, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Steven Pennington' },
-  { encounter_id: 'ENC-0003916', patient_id: 'PAT-001894', encounter_date: '2023-11-09T08:30:00', encounter_type: 'outpatient', facility: 'Saanich Peninsula Hospital', chief_complaint: 'anxiety/depression', diagnosis_code: 'F32.9', diagnosis_description: 'Major depressive disorder', triage_level: 1, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Mary Foster' },
-  { encounter_id: 'ENC-0008866', patient_id: 'PAT-001747', encounter_date: '2024-09-08T08:30:00', encounter_type: 'inpatient', facility: 'Cowichan District Hospital', chief_complaint: 'abdominal pain', diagnosis_code: 'K35.9', diagnosis_description: 'Acute appendicitis', triage_level: 3, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Jason Garrison' },
-  { encounter_id: 'ENC-0000388', patient_id: 'PAT-001421', encounter_date: '2025-10-15T08:30:00', encounter_type: 'emergency', facility: 'Cowichan District Hospital', chief_complaint: 'injury from fall', diagnosis_code: 'S82.0', diagnosis_description: 'Fracture of patella', triage_level: 5, disposition: 'admitted', length_of_stay_hours: 63.2, attending_physician: 'Dr. Nathaniel Perez' },
-  { encounter_id: 'ENC-0009852', patient_id: 'PAT-001894', encounter_date: '2026-01-28T08:30:00', encounter_type: 'inpatient', facility: 'Cowichan District Hospital', chief_complaint: 'skin rash', diagnosis_code: 'R00.0', diagnosis_description: 'Tachycardia', triage_level: 1, disposition: 'transferred', length_of_stay_hours: 26.9, attending_physician: 'Dr. Ryan White' },
-  { encounter_id: 'ENC-0004841', patient_id: 'PAT-000144', encounter_date: '2023-08-19T08:30:00', encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'nausea and vomiting', diagnosis_code: 'K21.0', diagnosis_description: 'Gastroesophageal reflux disease', triage_level: 5, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Joshua Gibson' },
-  { encounter_id: 'ENC-0003829', patient_id: 'PAT-001645', encounter_date: '2023-07-05T08:30:00', encounter_type: 'outpatient', facility: 'Victoria General Hospital', chief_complaint: 'cough and cold symptoms', diagnosis_code: 'J06.9', diagnosis_description: 'Acute upper respiratory infection', triage_level: 5, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Gregory Wilson' },
-  { encounter_id: 'ENC-0007129', patient_id: 'PAT-000045', encounter_date: '2023-04-10T08:30:00', encounter_type: 'outpatient', facility: 'Victoria General Hospital', chief_complaint: 'cough and cold symptoms', diagnosis_code: 'J06.9', diagnosis_description: 'Acute upper respiratory infection', triage_level: 4, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. William Wang' },
-  { encounter_id: 'ENC-0007123', patient_id: 'PAT-000108', encounter_date: '2023-09-27T08:30:00', encounter_type: 'outpatient', facility: 'Victoria General Hospital', chief_complaint: 'back pain', diagnosis_code: 'M54.5', diagnosis_description: 'Low back pain', triage_level: 4, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Christine Morgan' },
-  { encounter_id: 'ENC-0009573', patient_id: 'PAT-001116', encounter_date: '2025-05-08T08:30:00', encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'shortness of breath', diagnosis_code: 'J18.9', diagnosis_description: 'Pneumonia, unspecified', triage_level: 1, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Mary Foster' },
-  { encounter_id: 'ENC-0001215', patient_id: 'PAT-001124', encounter_date: '2023-03-10T08:30:00', encounter_type: 'outpatient', facility: 'Victoria General Hospital', chief_complaint: 'chest pain', diagnosis_code: 'I21.9', diagnosis_description: 'Acute myocardial infarction', triage_level: 1, disposition: 'admitted', length_of_stay_hours: 24.0, attending_physician: 'Dr. Rachel Reyes' },
-  { encounter_id: 'ENC-0003370', patient_id: 'PAT-000776', encounter_date: '2023-06-27T08:30:00', encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'cough and cold symptoms', diagnosis_code: 'J06.9', diagnosis_description: 'Acute upper respiratory infection', triage_level: 5, disposition: 'observation', length_of_stay_hours: 5.3, attending_physician: 'Dr. Brandon Davis' },
-  { encounter_id: 'ENC-0000810', patient_id: 'PAT-001421', encounter_date: '2024-10-12T08:30:00', encounter_type: 'emergency', facility: 'Saanich Peninsula Hospital', chief_complaint: 'nausea and vomiting', diagnosis_code: 'K21.0', diagnosis_description: 'Gastroesophageal reflux disease', triage_level: 2, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. David Hall' },
-  { encounter_id: 'ENC-0004599', patient_id: 'PAT-001894', encounter_date: '2023-08-01T08:30:00', encounter_type: 'outpatient', facility: 'Victoria General Hospital', chief_complaint: 'dizziness', diagnosis_code: 'E11.9', diagnosis_description: 'Type 2 diabetes mellitus', triage_level: 3, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Bryan Brown' },
-  { encounter_id: 'ENC-0003497', patient_id: 'PAT-001792', encounter_date: '2023-10-29T08:30:00', encounter_type: 'emergency', facility: 'Victoria General Hospital', chief_complaint: 'fever', diagnosis_code: 'J02.9', diagnosis_description: 'Acute pharyngitis', triage_level: 4, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Mark Wright' },
-  { encounter_id: 'ENC-0001530', patient_id: 'PAT-001668', encounter_date: '2023-05-13T08:30:00', encounter_type: 'outpatient', facility: 'Saanich Peninsula Hospital', chief_complaint: 'back pain', diagnosis_code: 'M54.5', diagnosis_description: 'Low back pain', triage_level: 4, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. David Rodriguez' },
-  { encounter_id: 'ENC-0008995', patient_id: 'PAT-001894', encounter_date: '2024-02-24T08:30:00', encounter_type: 'outpatient', facility: 'Royal Jubilee Hospital', chief_complaint: 'anxiety/depression', diagnosis_code: 'F32.9', diagnosis_description: 'Major depressive disorder', triage_level: 2, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Cassandra Miller' },
-  { encounter_id: 'ENC-0006552', patient_id: 'PAT-000096', encounter_date: '2025-07-03T08:30:00', encounter_type: 'outpatient', facility: 'Victoria General Hospital', chief_complaint: 'injury from fall', diagnosis_code: 'S93.4', diagnosis_description: 'Sprain of ankle', triage_level: 2, disposition: 'transferred', length_of_stay_hours: 24.0, attending_physician: 'Dr. Nathaniel Perez' },
-  { encounter_id: 'ENC-0009243', patient_id: 'PAT-001177', encounter_date: '2025-01-05T08:30:00', encounter_type: 'outpatient', facility: 'Cowichan District Hospital', chief_complaint: 'abdominal pain', diagnosis_code: 'R10.9', diagnosis_description: 'Abdominal pain, unspecified', triage_level: 3, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Lisa Fox' },
-  { encounter_id: 'ENC-0006312', patient_id: 'PAT-001894', encounter_date: '2025-07-21T08:30:00', encounter_type: 'outpatient', facility: 'Royal Jubilee Hospital', chief_complaint: 'chest pain', diagnosis_code: 'R07.9', diagnosis_description: 'Chest pain, unspecified', triage_level: 5, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Mary Foster' },
+  { encounter_id: 'ENC-0005422', patient_id: 'PAT-001997', encounter_date: todayAt(3.5), encounter_type: 'emergency', facility: 'Victoria General Hospital', chief_complaint: 'headache', diagnosis_code: 'I10', diagnosis_description: 'Essential hypertension', triage_level: 2, disposition: 'admitted', length_of_stay_hours: 24.0, attending_physician: 'Dr. Brenda Johnson' },
+  { encounter_id: 'ENC-0008293', patient_id: 'PAT-001894', encounter_date: todayAt(2.8), encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'dizziness', diagnosis_code: 'E11.9', diagnosis_description: 'Type 2 diabetes mellitus', triage_level: 2, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Rhonda Taylor' },
+  { encounter_id: 'ENC-0007580', patient_id: 'PAT-000008', encounter_date: todayAt(1.2), encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'chest pain', diagnosis_code: 'R07.9', diagnosis_description: 'Chest pain, unspecified', triage_level: 2, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Gregory Wilson' },
+  { encounter_id: 'ENC-0002871', patient_id: 'PAT-001191', encounter_date: todayAt(4.1), encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'abdominal pain', diagnosis_code: 'K35.9', diagnosis_description: 'Acute appendicitis', triage_level: 1, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Christine Morgan' },
+  { encounter_id: 'ENC-0006073', patient_id: 'PAT-001918', encounter_date: todayAt(1.8), encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'back pain', diagnosis_code: 'M54.5', diagnosis_description: 'Low back pain', triage_level: 3, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Lisa Fox' },
+  { encounter_id: 'ENC-0009552', patient_id: 'PAT-001233', encounter_date: todayAt(0.9), encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'headache', diagnosis_code: 'I10', diagnosis_description: 'Essential hypertension', triage_level: 3, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Steven Pennington' },
+  { encounter_id: 'ENC-0003916', patient_id: 'PAT-001894', encounter_date: todayAt(3.9), encounter_type: 'emergency', facility: 'Saanich Peninsula Hospital', chief_complaint: 'anxiety/depression', diagnosis_code: 'F32.9', diagnosis_description: 'Major depressive disorder', triage_level: 1, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Mary Foster' },
+  { encounter_id: 'ENC-0008866', patient_id: 'PAT-001747', encounter_date: todayAt(2.2), encounter_type: 'emergency', facility: 'Cowichan District Hospital', chief_complaint: 'abdominal pain', diagnosis_code: 'K35.9', diagnosis_description: 'Acute appendicitis', triage_level: 3, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Jason Garrison' },
+  { encounter_id: 'ENC-0000388', patient_id: 'PAT-001421', encounter_date: todayAt(0.3), encounter_type: 'emergency', facility: 'Cowichan District Hospital', chief_complaint: 'injury from fall', diagnosis_code: 'S82.0', diagnosis_description: 'Fracture of patella', triage_level: 5, disposition: 'admitted', length_of_stay_hours: 63.2, attending_physician: 'Dr. Nathaniel Perez' },
+  { encounter_id: 'ENC-0009852', patient_id: 'PAT-001894', encounter_date: todayAt(3.2), encounter_type: 'emergency', facility: 'Cowichan District Hospital', chief_complaint: 'skin rash', diagnosis_code: 'R00.0', diagnosis_description: 'Tachycardia', triage_level: 1, disposition: 'transferred', length_of_stay_hours: 26.9, attending_physician: 'Dr. Ryan White' },
+  { encounter_id: 'ENC-0004841', patient_id: 'PAT-000144', encounter_date: todayAt(0.5), encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'nausea and vomiting', diagnosis_code: 'K21.0', diagnosis_description: 'Gastroesophageal reflux disease', triage_level: 5, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Joshua Gibson' },
+  { encounter_id: 'ENC-0003829', patient_id: 'PAT-001645', encounter_date: todayAt(2.5), encounter_type: 'emergency', facility: 'Victoria General Hospital', chief_complaint: 'cough and cold symptoms', diagnosis_code: 'J06.9', diagnosis_description: 'Acute upper respiratory infection', triage_level: 5, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Gregory Wilson' },
+  { encounter_id: 'ENC-0007129', patient_id: 'PAT-000045', encounter_date: todayAt(1.5), encounter_type: 'emergency', facility: 'Victoria General Hospital', chief_complaint: 'cough and cold symptoms', diagnosis_code: 'J06.9', diagnosis_description: 'Acute upper respiratory infection', triage_level: 4, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. William Wang' },
+  { encounter_id: 'ENC-0007123', patient_id: 'PAT-000108', encounter_date: todayAt(1.0), encounter_type: 'emergency', facility: 'Victoria General Hospital', chief_complaint: 'back pain', diagnosis_code: 'M54.5', diagnosis_description: 'Low back pain', triage_level: 4, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Christine Morgan' },
+  { encounter_id: 'ENC-0009573', patient_id: 'PAT-001116', encounter_date: todayAt(2.0), encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'shortness of breath', diagnosis_code: 'J18.9', diagnosis_description: 'Pneumonia, unspecified', triage_level: 1, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Mary Foster' },
+  { encounter_id: 'ENC-0001215', patient_id: 'PAT-001124', encounter_date: todayAt(3.7), encounter_type: 'emergency', facility: 'Victoria General Hospital', chief_complaint: 'chest pain', diagnosis_code: 'I21.9', diagnosis_description: 'Acute myocardial infarction', triage_level: 1, disposition: 'admitted', length_of_stay_hours: 24.0, attending_physician: 'Dr. Rachel Reyes' },
+  { encounter_id: 'ENC-0003370', patient_id: 'PAT-000776', encounter_date: todayAt(2.3), encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'cough and cold symptoms', diagnosis_code: 'J06.9', diagnosis_description: 'Acute upper respiratory infection', triage_level: 5, disposition: 'observation', length_of_stay_hours: 5.3, attending_physician: 'Dr. Brandon Davis' },
+  { encounter_id: 'ENC-0000810', patient_id: 'PAT-001421', encounter_date: todayAt(0.7), encounter_type: 'emergency', facility: 'Saanich Peninsula Hospital', chief_complaint: 'nausea and vomiting', diagnosis_code: 'K21.0', diagnosis_description: 'Gastroesophageal reflux disease', triage_level: 2, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. David Hall' },
+  { encounter_id: 'ENC-0004599', patient_id: 'PAT-001894', encounter_date: todayAt(1.6), encounter_type: 'emergency', facility: 'Victoria General Hospital', chief_complaint: 'dizziness', diagnosis_code: 'E11.9', diagnosis_description: 'Type 2 diabetes mellitus', triage_level: 3, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Bryan Brown' },
+  { encounter_id: 'ENC-0003497', patient_id: 'PAT-001792', encounter_date: todayAt(0.4), encounter_type: 'emergency', facility: 'Victoria General Hospital', chief_complaint: 'fever', diagnosis_code: 'J02.9', diagnosis_description: 'Acute pharyngitis', triage_level: 4, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Mark Wright' },
+  { encounter_id: 'ENC-0001530', patient_id: 'PAT-001668', encounter_date: todayAt(2.6), encounter_type: 'emergency', facility: 'Saanich Peninsula Hospital', chief_complaint: 'back pain', diagnosis_code: 'M54.5', diagnosis_description: 'Low back pain', triage_level: 4, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. David Rodriguez' },
+  { encounter_id: 'ENC-0008995', patient_id: 'PAT-001894', encounter_date: todayAt(1.3), encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'anxiety/depression', diagnosis_code: 'F32.9', diagnosis_description: 'Major depressive disorder', triage_level: 2, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Cassandra Miller' },
+  { encounter_id: 'ENC-0006552', patient_id: 'PAT-000096', encounter_date: todayAt(0.6), encounter_type: 'emergency', facility: 'Victoria General Hospital', chief_complaint: 'injury from fall', diagnosis_code: 'S93.4', diagnosis_description: 'Sprain of ankle', triage_level: 2, disposition: 'transferred', length_of_stay_hours: 24.0, attending_physician: 'Dr. Nathaniel Perez' },
+  { encounter_id: 'ENC-0009243', patient_id: 'PAT-001177', encounter_date: todayAt(1.9), encounter_type: 'emergency', facility: 'Cowichan District Hospital', chief_complaint: 'abdominal pain', diagnosis_code: 'R10.9', diagnosis_description: 'Abdominal pain, unspecified', triage_level: 3, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Lisa Fox' },
+  { encounter_id: 'ENC-0006312', patient_id: 'PAT-001894', encounter_date: todayAt(0.1), encounter_type: 'emergency', facility: 'Royal Jubilee Hospital', chief_complaint: 'chest pain', diagnosis_code: 'R07.9', diagnosis_description: 'Chest pain, unspecified', triage_level: 5, disposition: 'discharged', length_of_stay_hours: 0.0, attending_physician: 'Dr. Mary Foster' },
 ];
 
 export const vitals: Vitals[] = [
@@ -247,25 +266,27 @@ export const medications: Medication[] = [
 // HELPER FUNCTIONS
 // ─────────────────────────────────────────────
 export function getAllEncountersWithPatients() {
+  const now = new Date();
   return encounters.map((enc) => {
     const patient = patients.find((p) => p.patient_id === enc.patient_id) ?? null;
     const encVitals = vitals.find((v) => v.encounter_id === enc.encounter_id) ?? null;
     const encLabs = labResults.filter((l) => l.encounter_id === enc.encounter_id);
     const encMeds = medications.filter((m) => m.patient_id === enc.patient_id);
-    const serviceData = encounterServiceData[enc.encounter_id] ?? {
-      serviceLine: 'doctor' as ServiceLine,
-      journeyStatus: 'Waiting' as JourneyStatus,
-      estimatedWaitMinutes: 30,
-    };
+
+    const minutesSinceArrival = Math.max(0, (now.getTime() - new Date(enc.encounter_date).getTime()) / 60000);
+    const serviceLine = mapServiceLine(enc.chief_complaint);
+    const journeyStatus = mapJourneyStatus(enc.triage_level, minutesSinceArrival);
+    const estimatedWaitMinutes = computeEstimatedWait(enc.triage_level, minutesSinceArrival, journeyStatus);
+
     return {
       ...enc,
       patient,
       vitals: encVitals,
       labs: encLabs,
       medications: encMeds,
-      serviceLine: serviceData.serviceLine,
-      journeyStatus: serviceData.journeyStatus,
-      estimatedWaitMinutes: serviceData.estimatedWaitMinutes,
+      serviceLine,
+      journeyStatus,
+      estimatedWaitMinutes,
     };
   });
 }

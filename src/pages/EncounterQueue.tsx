@@ -335,12 +335,13 @@ function ServiceQueueSection({
   const serviceLines: ServiceLine[] = ["doctor", "blood-work", "imaging", "pharmacy"];
 
   const stats = useMemo(() => {
-    const avgWaitMap: Record<ServiceLine, number> = { doctor: 28, "blood-work": 35, imaging: 52, pharmacy: 18 };
     return serviceLines.reduce((acc, sl) => {
       const inService = encounters.filter(e => e.serviceLine === sl);
       const active = inService.filter(e => e.journeyStatus === "In Progress").length;
       const waiting = inService.length - active;
-      acc[sl] = { waiting, active, avgWait: avgWaitMap[sl] };
+      const waits = inService.map(e => e.estimatedWaitMinutes).filter(w => w > 0);
+      const avgWait = waits.length > 0 ? Math.round(waits.reduce((s, w) => s + w, 0) / waits.length) : 0;
+      acc[sl] = { waiting, active, avgWait };
       return acc;
     }, {} as Record<ServiceLine, { waiting: number; active: number; avgWait: number }>);
   }, [encounters]);
@@ -658,10 +659,25 @@ function Sidebar({
 
   const criticalCount = encounters.filter(e => e.triage_level <= 2).length;
 
+  // Compute real avg wait by triage group
+  const criticalEncs = encounters.filter(e => e.triage_level <= 2);
+  const urgentEncs = encounters.filter(e => e.triage_level === 3);
+  const lowEncs = encounters.filter(e => e.triage_level >= 4);
+
+  const avgOf = (list: typeof encounters) => {
+    const waits = list.map(e => e.estimatedWaitMinutes).filter(w => w > 0);
+    return waits.length > 0 ? Math.round(waits.reduce((s, w) => s + w, 0) / waits.length) : 0;
+  };
+
+  const allAvgWait = avgOf(encounters);
+  const criticalAvgWait = avgOf(criticalEncs);
+  const urgentAvgWait = avgOf(urgentEncs);
+  const lowAvgWait = avgOf(lowEncs);
+
   const waitRows = [
-    { label: "Critical (CTAS 1–2)", wait: "< 5 min", dot: "#F87171" },
-    { label: "Urgent (CTAS 3)",     wait: "28 min",  dot: "#FCD34D" },
-    { label: "Low risk (CTAS 4–5)", wait: "58 min",  dot: "#93C5FD" },
+    { label: "Critical (CTAS 1–2)", wait: criticalAvgWait > 0 ? `${criticalAvgWait} min` : "< 5 min", dot: "#F87171" },
+    { label: "Urgent (CTAS 3)",     wait: `${urgentAvgWait} min`,  dot: "#FCD34D" },
+    { label: "Low risk (CTAS 4–5)", wait: `${lowAvgWait} min`,  dot: "#93C5FD" },
   ];
 
   return (
@@ -727,11 +743,11 @@ function Sidebar({
         <div className="flex items-end justify-between gap-2 mb-4">
           <div>
             <p className="text-4xl font-bold text-white tabular-nums leading-none">
-              42<span className="text-base font-semibold text-white/50 ml-1">min</span>
+              {allAvgWait}<span className="text-base font-semibold text-white/50 ml-1">min</span>
             </p>
             <div className="flex items-center gap-1 mt-1.5">
               <TrendingDown className="w-3.5 h-3.5 text-[#34D399]" />
-              <span className="text-xs font-semibold text-[#34D399]">−12% vs last week</span>
+              <span className="text-xs font-semibold text-[#34D399]">Within target</span>
             </div>
           </div>
           <svg viewBox="0 0 60 26" className="w-16 h-7 flex-shrink-0 opacity-80">
