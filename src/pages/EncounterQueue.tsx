@@ -640,7 +640,7 @@ function Sidebar({
 }) {
   const location  = useLocation();
   const isQueue    = location.pathname === "/queue";
-  const isDashboard = !isQueue;
+  const isDashboard = location.pathname === "/dashboard";
   const isWaiting  = location.pathname === "/waiting";
 
   const primaryNav = [
