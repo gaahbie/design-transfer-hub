@@ -266,25 +266,27 @@ export const medications: Medication[] = [
 // HELPER FUNCTIONS
 // ─────────────────────────────────────────────
 export function getAllEncountersWithPatients() {
+  const now = new Date();
   return encounters.map((enc) => {
     const patient = patients.find((p) => p.patient_id === enc.patient_id) ?? null;
     const encVitals = vitals.find((v) => v.encounter_id === enc.encounter_id) ?? null;
     const encLabs = labResults.filter((l) => l.encounter_id === enc.encounter_id);
     const encMeds = medications.filter((m) => m.patient_id === enc.patient_id);
-    const serviceData = encounterServiceData[enc.encounter_id] ?? {
-      serviceLine: 'doctor' as ServiceLine,
-      journeyStatus: 'Waiting' as JourneyStatus,
-      estimatedWaitMinutes: 30,
-    };
+
+    const minutesSinceArrival = Math.max(0, (now.getTime() - new Date(enc.encounter_date).getTime()) / 60000);
+    const serviceLine = mapServiceLine(enc.chief_complaint);
+    const journeyStatus = mapJourneyStatus(enc.triage_level, minutesSinceArrival);
+    const estimatedWaitMinutes = computeEstimatedWait(enc.triage_level, minutesSinceArrival, journeyStatus);
+
     return {
       ...enc,
       patient,
       vitals: encVitals,
       labs: encLabs,
       medications: encMeds,
-      serviceLine: serviceData.serviceLine,
-      journeyStatus: serviceData.journeyStatus,
-      estimatedWaitMinutes: serviceData.estimatedWaitMinutes,
+      serviceLine,
+      journeyStatus,
+      estimatedWaitMinutes,
     };
   });
 }
