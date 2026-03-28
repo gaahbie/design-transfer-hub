@@ -146,7 +146,7 @@ function ServiceBadge({ serviceLine }: { serviceLine: ServiceLine }) {
 // ─────────────────────────────────────────────────────────────
 // ENCOUNTER CARD
 // ─────────────────────────────────────────────────────────────
-function EncounterCard({ enc }: { enc: ReturnType<typeof getAllEncountersWithPatients>[number] }) {
+function EncounterCard({ enc, index }: { enc: ReturnType<typeof getAllEncountersWithPatients>[number]; index: number }) {
   const triage = TRIAGE[enc.triage_level as keyof typeof TRIAGE] ?? TRIAGE[3];
   const findings = computeClinicalAlerts(enc.vitals, enc.labs ?? []);
   const svc = SERVICE_CONFIG[enc.serviceLine];
@@ -163,7 +163,7 @@ function EncounterCard({ enc }: { enc: ReturnType<typeof getAllEncountersWithPat
         <div className="flex items-start gap-3 mb-2">
           <div className={`flex-shrink-0 w-9 h-9 rounded-full ${triage.bg} flex flex-col items-center justify-center`}>
             <span className="text-[8px] text-white/60 leading-none">#</span>
-            <span className="text-sm font-bold text-white leading-none">{enc.queuePosition}</span>
+            <span className="text-sm font-bold text-white leading-none">{index + 1}</span>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-0.5">
@@ -309,7 +309,7 @@ function RiskGroupSection({
                     No patients
                   </div>
                 ) : (
-                  g.list.map(enc => <EncounterCard key={enc.encounter_id} enc={enc} />)
+                  g.list.map((enc, i) => <EncounterCard key={enc.encounter_id} enc={enc} index={i + 1} />)
                 )}
               </div>
             </div>
@@ -484,7 +484,7 @@ function PatientQueueTable({
               No encounters match your filters.
             </div>
           ) : (
-            filtered.map((enc) => {
+            filtered.map((enc, index) => {
               const triage = TRIAGE[enc.triage_level as keyof typeof TRIAGE] ?? TRIAGE[3];
               const findings = computeClinicalAlerts(enc.vitals, enc.labs ?? []);
               const hasCritical = findings.some(f => f.severity === "critical");
@@ -498,7 +498,7 @@ function PatientQueueTable({
                 >
                   {/* Position */}
                   <div className={`w-7 h-7 rounded-full ${triage.bg} flex flex-col items-center justify-center flex-shrink-0`}>
-                    <span className="text-[9px] font-bold text-white leading-none">{enc.queuePosition}</span>
+                    <span className="text-[9px] font-bold text-white leading-none">{index + 1}</span>
                   </div>
 
                   {/* Patient */}
