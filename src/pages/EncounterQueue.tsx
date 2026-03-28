@@ -146,7 +146,7 @@ function ServiceBadge({ serviceLine }: { serviceLine: ServiceLine }) {
 // ─────────────────────────────────────────────────────────────
 // ENCOUNTER CARD
 // ─────────────────────────────────────────────────────────────
-function EncounterCard({ enc }: { enc: ReturnType<typeof getAllEncountersWithPatients>[number] }) {
+function EncounterCard({ enc, index }: { enc: ReturnType<typeof getAllEncountersWithPatients>[number]; index: number }) {
   const triage = TRIAGE[enc.triage_level as keyof typeof TRIAGE] ?? TRIAGE[3];
   const findings = computeClinicalAlerts(enc.vitals, enc.labs ?? []);
   const svc = SERVICE_CONFIG[enc.serviceLine];
@@ -309,7 +309,7 @@ function RiskGroupSection({
                     No patients
                   </div>
                 ) : (
-                  g.list.map(enc => <EncounterCard key={enc.encounter_id} enc={enc} />)
+                  g.list.map((enc, i) => <EncounterCard key={enc.encounter_id} enc={enc} index={i + 1} />)
                 )}
               </div>
             </div>
@@ -484,7 +484,7 @@ function PatientQueueTable({
               No encounters match your filters.
             </div>
           ) : (
-            filtered.map((enc) => {
+            filtered.map((enc, index) => {
               const triage = TRIAGE[enc.triage_level as keyof typeof TRIAGE] ?? TRIAGE[3];
               const findings = computeClinicalAlerts(enc.vitals, enc.labs ?? []);
               const hasCritical = findings.some(f => f.severity === "critical");
