@@ -141,8 +141,8 @@ export default function Onboarding() {
 // ─────────────────────────────────────────────────
 function SlideProblem() {
   const stats = [
-    { value: "4–8h", label: "Average wait for\nnon-urgent patients", color: "#CE3E39" },
-    { value: "830K", label: "British Columbians\nwithout a family doctor", color: "#F59E0B" },
+    { value: "6–8h+", label: "ED wait times\nin Victoria", color: "#CE3E39" },
+    { value: "700K", label: "British Columbians\nwithout a family doctor", color: "#F59E0B" },
     { value: "62%", label: "Of ER visits are for\nnon-emergency issues", color: "#3B82F6" },
   ];
 
