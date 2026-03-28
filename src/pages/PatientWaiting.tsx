@@ -853,7 +853,7 @@ export default function PatientWaiting() {
             
             {/* Back to Dashboard Link */}
             <Link 
-              to="/" 
+              to="/dashboard" 
               className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#F2F4F7] border border-[#E0DEDC] text-sm font-semibold text-[#013366] hover:bg-[#EFF6FF] hover:border-[#013366]/20 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
