@@ -2,95 +2,116 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* B.C. Design System — Build Worker Health Dashboard
+   All colors are HSL for Tailwind v3 compatibility.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* B.C. Design System Colors (as CSS custom props for direct use) */
+    --color-charcoal-primary: #2D2D2D;
+    --color-charcoal-secondary: #474543;
+    --color-gray-placeholder: #9F9D9C;
+    --color-gray-disabled: #EDEBE9;
+    --color-gray-border: #D8D8D8;
+    --color-gray-hover: #E0DEDC;
+    --color-navy-default: #013366;
+    --color-navy-hover: #1E5189;
+    --color-navy-pressed: #01264C;
+    --color-blue-link: #255A90;
+    --color-red-danger: #CE3E39;
+    --color-red-critical: #D33F3A;
+
+    /* Shadcn semantic tokens — HSL */
+    --background: 0 0% 96.1%;
+    --foreground: 0 0.6% 17.6%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 0 0.6% 17.6%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0.6% 17.6%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 210 98% 20%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 30 6.5% 92.2%;
+    --secondary-foreground: 0 0.6% 17.6%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 24 0.6% 27.6%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 30 3.6% 86.7%;
+    --accent-foreground: 0 0.6% 17.6%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 2 58.2% 51.2%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 0 0% 84.7%;
+    --input: 0 0% 84.7%;
+    --ring: 210 57.4% 35.5%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 0 0.6% 17.6%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 210 98% 20%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 24 0.6% 27.6%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 24 0.6% 27.6%;
+    --sidebar-ring: 210 57.4% 35.5%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Chart colors */
+    --chart-1: 210 98% 20%;
+    --chart-2: 210 57.4% 35.5%;
+    --chart-3: 210 66.2% 33.1%;
+    --chart-4: 2 58.2% 51.2%;
+    --chart-5: 24 0.6% 27.6%;
 
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Status Colors — Healthcare */
+    --status-critical: #CE3E39;
+    --status-critical-bg: #FEF2F2;
+    --status-critical-border: #FECACA;
+    --status-warning: #F59E0B;
+    --status-warning-bg: #FFFBEB;
+    --status-warning-border: #FDE68A;
+    --status-success: #10B981;
+    --status-success-bg: #F0FDF4;
+    --status-success-border: #BBF7D0;
+    --status-info: #255A90;
+    --status-info-bg: #EFF6FF;
+    --status-info-border: #BFDBFE;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --background: 0 0% 10.2%;
+    --foreground: 0 0% 100%;
+    --card: 0 0.6% 17.6%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0.6% 17.6%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 210 66.2% 33.1%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 24 0.6% 27.6%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 24 0.6% 27.6%;
+    --muted-foreground: 24 0.5% 61.8%;
+    --accent: 24 0.6% 27.6%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 2 56.7% 52.5%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 24 0.6% 27.6%;
+    --input: 24 0.6% 27.6%;
+    --ring: 210 57.4% 35.5%;
+    --sidebar-background: 0 0% 10.2%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 210 66.2% 33.1%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 24 0.6% 27.6%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 24 0.6% 27.6%;
+    --sidebar-ring: 210 57.4% 35.5%;
   }
 }
 
@@ -101,5 +122,11 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'BC Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
+
+  h1 { font-size: 2rem; font-weight: 600; line-height: 1.3; }
+  h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.3; }
+  h3 { font-size: 1.125rem; font-weight: 600; line-height: 1.4; }
+  h4 { font-size: 1rem; font-weight: 500; line-height: 1.5; }
 }
