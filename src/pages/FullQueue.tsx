@@ -202,12 +202,13 @@ export default function FullQueue() {
   // Service queue stats
   const serviceLines: ServiceLine[] = ["doctor", "blood-work", "imaging", "pharmacy"];
   const serviceStats = useMemo(() => {
-    const avgWaitMap: Record<ServiceLine, number> = { doctor: 28, "blood-work": 35, imaging: 52, pharmacy: 18 };
     return serviceLines.reduce((acc, sl) => {
       const inService = encounters.filter(e => e.serviceLine === sl);
       const active = inService.filter(e => e.journeyStatus === "In Progress").length;
       const waiting = inService.length - active;
-      acc[sl] = { waiting, active, avgWait: avgWaitMap[sl] };
+      const waits = inService.map(e => e.estimatedWaitMinutes).filter(w => w > 0);
+      const avgWait = waits.length > 0 ? Math.round(waits.reduce((s, w) => s + w, 0) / waits.length) : 0;
+      acc[sl] = { waiting, active, avgWait };
       return acc;
     }, {} as Record<ServiceLine, { waiting: number; active: number; avgWait: number }>);
   }, [encounters]);
