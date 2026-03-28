@@ -659,10 +659,25 @@ function Sidebar({
 
   const criticalCount = encounters.filter(e => e.triage_level <= 2).length;
 
+  // Compute real avg wait by triage group
+  const criticalEncs = encounters.filter(e => e.triage_level <= 2);
+  const urgentEncs = encounters.filter(e => e.triage_level === 3);
+  const lowEncs = encounters.filter(e => e.triage_level >= 4);
+
+  const avgOf = (list: typeof encounters) => {
+    const waits = list.map(e => e.estimatedWaitMinutes).filter(w => w > 0);
+    return waits.length > 0 ? Math.round(waits.reduce((s, w) => s + w, 0) / waits.length) : 0;
+  };
+
+  const allAvgWait = avgOf(encounters);
+  const criticalAvgWait = avgOf(criticalEncs);
+  const urgentAvgWait = avgOf(urgentEncs);
+  const lowAvgWait = avgOf(lowEncs);
+
   const waitRows = [
-    { label: "Critical (CTAS 1–2)", wait: "< 5 min", dot: "#F87171" },
-    { label: "Urgent (CTAS 3)",     wait: "28 min",  dot: "#FCD34D" },
-    { label: "Low risk (CTAS 4–5)", wait: "58 min",  dot: "#93C5FD" },
+    { label: "Critical (CTAS 1–2)", wait: criticalAvgWait > 0 ? `${criticalAvgWait} min` : "< 5 min", dot: "#F87171" },
+    { label: "Urgent (CTAS 3)",     wait: `${urgentAvgWait} min`,  dot: "#FCD34D" },
+    { label: "Low risk (CTAS 4–5)", wait: `${lowAvgWait} min`,  dot: "#93C5FD" },
   ];
 
   return (
