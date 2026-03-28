@@ -218,7 +218,7 @@ export default function FullQueue() {
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <Link
-            to="/"
+            to="/dashboard"
             className="flex items-center gap-1.5 text-sm text-[#255A90] hover:text-[#013366] font-medium"
           >
             <ChevronLeft className="w-4 h-4" />

@@ -1,5 +1,5 @@
-import EncounterQueue from "./EncounterQueue";
+import Onboarding from "./Onboarding";
 
 export default function Index() {
-  return <EncounterQueue />;
+  return <Onboarding />;
 }

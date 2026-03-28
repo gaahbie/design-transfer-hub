@@ -640,11 +640,11 @@ function Sidebar({
 }) {
   const location  = useLocation();
   const isQueue    = location.pathname === "/queue";
-  const isDashboard = !isQueue;
+  const isDashboard = location.pathname === "/dashboard";
   const isWaiting  = location.pathname === "/waiting";
 
   const primaryNav = [
-    { to: "/",         label: "Dashboard",       Icon: LayoutDashboard, active: isDashboard, badge: null },
+    { to: "/dashboard", label: "Dashboard",       Icon: LayoutDashboard, active: isDashboard, badge: null },
     { to: "/queue",    label: "Full Queue",       Icon: ClipboardList,   active: isQueue,     badge: totalEncounters },
     { to: "/waiting",  label: "Patient View",     Icon: Users,           active: isWaiting,   badge: null, preview: true },
   ];

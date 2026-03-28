@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import EncounterDetail from "./pages/EncounterDetail.tsx";
+import EncounterQueue from "./pages/EncounterQueue.tsx";
 import FullQueue from "./pages/FullQueue.tsx";
 import PatientWaiting from "./pages/PatientWaiting.tsx";
 
@@ -19,6 +20,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/dashboard" element={<EncounterQueue />} />
           <Route path="/encounter/:encounterId" element={<EncounterDetail />} />
           <Route path="/queue" element={<FullQueue />} />
           <Route path="/waiting" element={<PatientWaiting />} />

@@ -88,7 +88,7 @@ export default function EncounterDetail() {
     <div className="p-6 max-w-7xl mx-auto bg-[#F5F5F5]">
       {/* Back Button */}
       <Link 
-        to="/" 
+        to="/dashboard" 
         className="inline-flex items-center gap-2 text-[#013366] hover:text-[#1E5189] mb-6 font-medium"
       >
         <ArrowLeft className="w-4 h-4" />
