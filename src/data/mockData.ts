@@ -81,36 +81,48 @@ export interface Medication {
   active: boolean;
 }
 
-export const encounterServiceData: Record<
-  string,
-  { serviceLine: ServiceLine; journeyStatus: JourneyStatus; estimatedWaitMinutes: number }
-> = {
-  'ENC-0005422': { serviceLine: 'doctor', journeyStatus: 'With Specialist', estimatedWaitMinutes: 25 },
-  'ENC-0008293': { serviceLine: 'imaging', journeyStatus: 'In Progress', estimatedWaitMinutes: 0 },
-  'ENC-0007580': { serviceLine: 'imaging', journeyStatus: 'Waiting', estimatedWaitMinutes: 47 },
-  'ENC-0002871': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 21 },
-  'ENC-0006073': { serviceLine: 'imaging', journeyStatus: 'Waiting', estimatedWaitMinutes: 38 },
-  'ENC-0009552': { serviceLine: 'doctor', journeyStatus: 'Waiting', estimatedWaitMinutes: 30 },
-  'ENC-0003916': { serviceLine: 'doctor', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 23 },
-  'ENC-0008866': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 32 },
-  'ENC-0000388': { serviceLine: 'imaging', journeyStatus: 'Waiting', estimatedWaitMinutes: 83 },
-  'ENC-0009852': { serviceLine: 'blood-work', journeyStatus: 'With Specialist', estimatedWaitMinutes: 2 },
-  'ENC-0004841': { serviceLine: 'doctor', journeyStatus: 'In Triage', estimatedWaitMinutes: 71 },
-  'ENC-0003829': { serviceLine: 'doctor', journeyStatus: 'Waiting', estimatedWaitMinutes: 72 },
-  'ENC-0007129': { serviceLine: 'doctor', journeyStatus: 'Ready for Discharge', estimatedWaitMinutes: 8 },
-  'ENC-0007123': { serviceLine: 'imaging', journeyStatus: 'Awaiting Medication', estimatedWaitMinutes: 12 },
-  'ENC-0009573': { serviceLine: 'blood-work', journeyStatus: 'With Specialist', estimatedWaitMinutes: 9 },
-  'ENC-0001215': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 23 },
-  'ENC-0003370': { serviceLine: 'pharmacy', journeyStatus: 'Waiting', estimatedWaitMinutes: 84 },
-  'ENC-0000810': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 39 },
-  'ENC-0004599': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 40 },
-  'ENC-0003497': { serviceLine: 'blood-work', journeyStatus: 'Awaiting Medication', estimatedWaitMinutes: 17 },
-  'ENC-0001530': { serviceLine: 'imaging', journeyStatus: 'Ready for Discharge', estimatedWaitMinutes: 13 },
-  'ENC-0008995': { serviceLine: 'blood-work', journeyStatus: 'With Specialist', estimatedWaitMinutes: 13 },
-  'ENC-0006552': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 29 },
-  'ENC-0009243': { serviceLine: 'imaging', journeyStatus: 'Awaiting Lab Results', estimatedWaitMinutes: 24 },
-  'ENC-0006312': { serviceLine: 'imaging', journeyStatus: 'In Triage', estimatedWaitMinutes: 76 },
-};
+// Map chief complaint → service line
+function mapServiceLine(complaint: string): ServiceLine {
+  const c = complaint.toLowerCase();
+  if (c.includes('chest pain') || c.includes('shortness of breath') || c.includes('abdominal pain') || c.includes('headache') || c.includes('dizziness') || c.includes('anxiety') || c.includes('fever')) return 'doctor';
+  if (c.includes('injury') || c.includes('back pain') || c.includes('fracture')) return 'imaging';
+  if (c.includes('rash') || c.includes('skin') || c.includes('nausea') || c.includes('vomiting')) return 'blood-work';
+  if (c.includes('cough') || c.includes('cold')) return 'pharmacy';
+  return 'doctor';
+}
+
+// Map triage + elapsed time → journey status
+function mapJourneyStatus(triage: number, minutesSinceArrival: number): JourneyStatus {
+  if (minutesSinceArrival < 8) return 'In Triage';
+  if (triage <= 2) {
+    if (minutesSinceArrival < 20) return 'Waiting';
+    if (minutesSinceArrival < 60) return 'In Progress';
+    if (minutesSinceArrival < 120) return 'Awaiting Lab Results';
+    return 'Ready for Discharge';
+  }
+  if (triage === 3) {
+    if (minutesSinceArrival < 35) return 'Waiting';
+    if (minutesSinceArrival < 90) return 'In Progress';
+    if (minutesSinceArrival < 150) return 'With Specialist';
+    return 'Ready for Discharge';
+  }
+  // triage 4-5
+  if (minutesSinceArrival < 60) return 'Waiting';
+  if (minutesSinceArrival < 120) return 'Awaiting Medication';
+  if (minutesSinceArrival < 180) return 'In Progress';
+  return 'Ready for Discharge';
+}
+
+// Compute estimated remaining wait based on CTAS targets
+function computeEstimatedWait(triage: number, minutesSinceArrival: number, status: JourneyStatus): number {
+  if (status === 'In Progress' || status === 'Ready for Discharge') return 0;
+  const targets: Record<number, number> = { 1: 5, 2: 15, 3: 30, 4: 60, 5: 120 };
+  const target = targets[triage] ?? 30;
+  // Estimated remaining = target total visit time minus elapsed, with some variance
+  const totalExpected = target + 45 + (triage * 15); // target wait + treatment time
+  const remaining = Math.max(0, totalExpected - minutesSinceArrival);
+  return remaining;
+}
 
 export const patients: Patient[] = [
   { patient_id: 'PAT-001747', first_name: 'Joanne', last_name: 'Stephenson', date_of_birth: '1992-11-15', age: 33, sex: 'F', postal_code: 'V8S 1Y6', blood_type: 'A+', insurance_number: '2112 181 851', primary_language: 'Other', emergency_contact_phone: '531-637-0500' },
