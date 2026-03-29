@@ -365,17 +365,17 @@ function SlideProduct({ onEnter }: { onEnter: () => void }) {
   ];
 
   return (
-    <div className="h-full flex flex-col items-center justify-center px-8 md:px-16 lg:px-24 pb-20">
+    <div className="h-full flex flex-col items-center justify-center px-8 md:px-16 lg:px-24 pb-24 pt-8 overflow-y-auto">
       {/* Title */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-8"
+        className="text-center mb-4 flex-shrink-0"
       >
-        <h2 className="text-4xl md:text-5xl font-bold text-[#013366] font-serif mb-3">
+        <h2 className="text-3xl md:text-4xl font-bold text-[#013366] font-serif mb-2">
           We built it.
         </h2>
-        <p className="text-base text-[#64748B] italic max-w-2xl mx-auto">
+        <p className="text-sm text-[#64748B] italic max-w-2xl mx-auto">
           A user-accessible web application that makes the invisible visible, and the waiting humane.
         </p>
       </motion.div>
@@ -385,7 +385,7 @@ function SlideProduct({ onEnter }: { onEnter: () => void }) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2, duration: 0.6 }}
-        className="w-full max-w-5xl mb-8"
+        className="w-full max-w-4xl mb-4 flex-shrink min-h-0"
       >
         <div className="bg-white rounded-2xl shadow-2xl shadow-[#013366]/10 border border-[#E2E8F0] overflow-hidden">
           {/* Browser chrome */}
@@ -407,13 +407,13 @@ function SlideProduct({ onEnter }: { onEnter: () => void }) {
           <img
             src={mockupQueue}
             alt="BC Care Clinician Dashboard showing real-time encounter queue"
-            className="w-full block"
+            className="w-full block max-h-[40vh] object-cover object-top"
           />
         </div>
       </motion.div>
 
       {/* Feature pills */}
-      <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+      <div className="flex flex-wrap items-center justify-center gap-3 mb-4 flex-shrink-0">
         {features.map((f, i) => (
           <motion.div
             key={f.title}
