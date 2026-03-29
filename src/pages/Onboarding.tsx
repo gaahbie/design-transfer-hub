@@ -407,7 +407,7 @@ function SlideProduct({ onEnter }: { onEnter: () => void }) {
           <img
             src={mockupQueue}
             alt="BC Care Clinician Dashboard showing real-time encounter queue"
-            className="w-full block"
+            className="w-full block max-h-[40vh] object-cover object-top"
           />
         </div>
       </motion.div>
