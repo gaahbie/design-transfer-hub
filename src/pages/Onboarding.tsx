@@ -413,7 +413,7 @@ function SlideProduct({ onEnter }: { onEnter: () => void }) {
       </motion.div>
 
       {/* Feature pills */}
-      <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+      <div className="flex flex-wrap items-center justify-center gap-3 mb-4 flex-shrink-0">
         {features.map((f, i) => (
           <motion.div
             key={f.title}
